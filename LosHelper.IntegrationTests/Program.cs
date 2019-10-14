@@ -21,35 +21,40 @@ namespace LosHelper.IntegrationTests
 
         private static void SaveLogToDataBase()
         {
-            var log = new JobLogger(LogToTarget.Database, true, true, true);
+            MessageType[] onlyShow = { MessageType.Error, MessageType.Message, MessageType.Warning };
+            var log = new JobLogger(LogToTarget.Database, onlyShow);
 
             log.LogMessage("a", MessageType.Warning);
         }
 
         private static void SaveLogToFile()
         {
-            var log = new JobLogger(LogToTarget.File, true, true, true);
+            MessageType[] onlyShow = { MessageType.Error, MessageType.Message, MessageType.Warning };
+            var log = new JobLogger(LogToTarget.File, onlyShow);
 
             log.LogMessage("a", MessageType.Warning);
         }
 
         private static void ShowWarningOnConsole()
         {
-            var log = new JobLogger(LogToTarget.Console, true, true, true);
+            MessageType[] onlyShow = { MessageType.Error, MessageType.Message, MessageType.Warning };
+            var log = new JobLogger(LogToTarget.Console, onlyShow);
 
             log.LogMessage("a", MessageType.Warning);
         }
 
         private static void ShowMessageOnConsole()
         {
-            var log = new JobLogger(LogToTarget.Console, true, true, true);
+            MessageType[] onlyShow = { MessageType.Error, MessageType.Message, MessageType.Warning };
+            var log = new JobLogger(LogToTarget.Console, onlyShow);
 
             log.LogMessage("a", MessageType.Message);
         }
 
         private static void ShowErrorOnConsole()
         {
-            var log = new JobLogger(LogToTarget.Console, true, true, true);
+            MessageType[] onlyShow = { MessageType.Error, MessageType.Message, MessageType.Warning };
+            var log = new JobLogger(LogToTarget.Console, onlyShow);
 
             log.LogMessage("a", MessageType.Error);
         }

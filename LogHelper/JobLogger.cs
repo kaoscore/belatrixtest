@@ -20,17 +20,11 @@ namespace LogHelper
     public class JobLogger : IJobLogger
     {
         private static LogToTarget _logToTarget;
-
-        private static bool _logMessage;
-        private static bool _logWarning;
-        private static bool _logError;
-
-     
-        public JobLogger(LogToTarget logToTarget, bool logMessage, bool logWarning, bool logError)
+        private static MessageType[] _onlyShow;
+             
+        public JobLogger(LogToTarget logToTarget, MessageType[] onlyShow)
         {
-            _logError = logError;
-            _logMessage = logMessage;
-            _logWarning = logWarning;
+            _onlyShow = onlyShow;
             _logToTarget = logToTarget;
 
         }
@@ -48,18 +42,8 @@ namespace LogHelper
             {
                 throw new ArgumentNullException();
             }
-
-
-            if (!_logError && !_logMessage && !_logWarning)
-            {
-                throw new Exception("Error or Warning or Message must be specified");
-            }
-
-            if (
-                   (messageType == MessageType.Message && _logMessage)
-                || (messageType == MessageType.Error && _logError)
-                || (messageType == MessageType.Warning && _logWarning)
-                )
+           
+            if (ShowLog(messageType))
             {
                 switch (_logToTarget)
                 {
@@ -77,7 +61,7 @@ namespace LogHelper
                 }
             }
             else
-                throw new Exception("Error or Warning or Message must be specified");
+                throw new Exception("Invalid configuration");
         }
 
         private void ToConsole(string message_to_log, MessageType messageType)
@@ -144,5 +128,25 @@ namespace LogHelper
             }
            
         }
+
+        private bool ShowLog(MessageType messageType)
+        {
+            bool canShow = false;
+
+            if (_onlyShow == null)
+                return false;
+
+            foreach (MessageType item in _onlyShow)
+            {
+                if(item == messageType)
+                {
+                    canShow = true;
+                }
+
+            }
+            return canShow;
+                
+        }
+
     }     
 }

@@ -13,7 +13,8 @@ namespace LogHelper.UnitTests
         [Test]
         public void LogMessage_MessageIsEmpty_ThrowArgNullException()
         {
-            var log = new JobLogger( LogToTarget.Console,true,true, true);
+            MessageType[] onlyShow = { MessageType.Error, MessageType.Message, MessageType.Warning };
+            var log = new JobLogger( LogToTarget.Console, onlyShow);
 
             Assert.That(() => log.LogMessage("", MessageType.Error), Throws.ArgumentNullException);                                  
 
@@ -21,27 +22,20 @@ namespace LogHelper.UnitTests
         [Test]
         public void LogMessage_MessageIsNull_ThrowArgNullException()
         {
-            var log = new JobLogger(LogToTarget.Console, true, true, true);
+            MessageType[] onlyShow = { MessageType.Error, MessageType.Message, MessageType.Warning };
+            var log = new JobLogger(LogToTarget.Console, onlyShow);
 
             Assert.That(() => log.LogMessage(null, MessageType.Error), Throws.ArgumentNullException);
 
         }
-        [Test]
-        public void LogMessage_AllChooseTypesAreFalse_ThrowException()
-        {
-            var log = new JobLogger(LogToTarget.Console, false, false, false);
-
-            Assert.That(() => log.LogMessage("a", MessageType.Error), Throws.Exception);
-
-        }
-
+       
      
-        [TestCase(MessageType.Error, true, true, false)]
-        [TestCase(MessageType.Message, false, true, false)]
-        [TestCase(MessageType.Warning, true, false, false)]
-        public void LogMessage_InvalidArguments_ThrowException(MessageType messageType, bool logMessage, bool logWarning, bool logError)
+        [TestCase(MessageType.Error, new MessageType[] { MessageType.Message })]
+        [TestCase(MessageType.Message, new MessageType[] { MessageType.Error })]
+        [TestCase(MessageType.Warning, new MessageType[] { MessageType.Error })]
+        public void LogMessage_InvalidArguments_ThrowException(MessageType messageType, MessageType[] onlyShow)
         {
-            var log = new JobLogger(LogToTarget.Console, logMessage, logWarning, logError);
+            var log = new JobLogger(LogToTarget.Console, onlyShow);
 
             Assert.That(() => log.LogMessage("a", messageType), Throws.Exception);
 
@@ -50,7 +44,8 @@ namespace LogHelper.UnitTests
         [Test]
         public void LogMessage_ToFileNoExists_CreateFile()
         {
-            var log = new JobLogger(LogToTarget.File, true, true, true);
+            MessageType[] onlyShow = { MessageType.Error, MessageType.Message, MessageType.Warning };
+            var log = new JobLogger(LogToTarget.File, onlyShow);
 
             FileAssert.Exists(@"D:\temp\LogFile" + DateTime.Now.ToString("dd-MM-yyyy") + ".txt");
            
