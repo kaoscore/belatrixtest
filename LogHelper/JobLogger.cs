@@ -22,12 +22,22 @@ namespace LogHelper
         private static LogToTarget _logToTarget;
         private static MessageType[] _onlyShow;
              
+        /// <summary>
+        /// Class constructor
+        /// </summary>
+        /// <param name="logToTarget">Target to Log</param>
+        /// <param name="onlyShow">Message type selected to show</param>
         public JobLogger(LogToTarget logToTarget, MessageType[] onlyShow)
         {
             _onlyShow = onlyShow;
             _logToTarget = logToTarget;
 
         }
+        /// <summary>
+        /// Log Message Method
+        /// </summary>
+        /// <param name="message_to_log">Message to Log</param>
+        /// <param name="messageType">Message Type</param>
         public void LogMessage(string message_to_log, MessageType messageType)
         {
            
@@ -129,6 +139,11 @@ namespace LogHelper
            
         }
 
+        /// <summary>
+        /// Verify if Message Type is able to show
+        /// </summary>
+        /// <param name="messageType"></param>
+        /// <returns></returns>
         private bool ShowLog(MessageType messageType)
         {
             bool canShow = false;
