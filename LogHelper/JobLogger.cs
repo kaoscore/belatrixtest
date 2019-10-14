@@ -1,100 +1,120 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Data.SqlClient;
+using System.IO;
 
 namespace LogHelper
 {
-    public class JobLogger
+    public enum LogToTarget
     {
-        private static bool _logToFile;
-        private static bool _logToConsole;
+        File, Console, Database
+    }
+
+    public enum MessageType
+    {
+        Message, Warning, Error
+    }
+    public interface IJobLogger
+    {
+        void LogMessage(string message_to_log, MessageType messageType);
+    }
+    public class JobLogger : IJobLogger
+    {
+        private static LogToTarget _logToTarget;
+
         private static bool _logMessage;
         private static bool _logWarning;
         private static bool _logError;
-        private static bool LogToDatabase;
-        private bool _initialized;
 
-        public JobLogger(bool logToFile, bool logToConsole, bool logToDatabase, bool logMessage, bool logWarning, bool logError)
+    
+        public JobLogger(LogToTarget logToTarget, bool logMessage, bool logWarning, bool logError)
         {
             _logError = logError;
             _logMessage = logMessage;
             _logWarning = logWarning;
-            LogToDatabase = logToDatabase;
-            _logToFile = logToFile;
-            _logToConsole = logToConsole;
+            _logToTarget = logToTarget;
+
         }
-        public static void LogMessage(string message_to_log, bool message, bool warning, bool error)
+        public void LogMessage(string message_to_log, MessageType messageType)
         {
             message_to_log.Trim();
             if (message_to_log == null || message_to_log.Length == 0)
             {
                 return;
             }
-            if (!_logToConsole && !_logToFile && !LogToDatabase)
-            {
-                throw new Exception("Invalid configuration");
-            }
-            if ((!_logError && !_logMessage && !_logWarning) || (!message && !warning && !error))
+
+            if (!_logError && !_logMessage && !_logWarning)
             {
                 throw new Exception("Error or Warning or Message must be specified");
             }
 
-            System.Data.SqlClient.SqlConnection connection = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.AppSettings["ConnectionString"]);
-            connection.Open();
-            int t  = 0;
-            if (message && _logMessage)
+            if (
+                   (messageType == MessageType.Message && _logMessage)
+                || (messageType == MessageType.Error && _logError)
+                || (messageType == MessageType.Warning && _logWarning)
+                )
             {
-                t = 1;
+                switch (_logToTarget)
+                {
+                    case LogToTarget.Database:
+                        ToDatabase(message_to_log, messageType);
+                        break;
+                    case LogToTarget.File:
+                        ToFile(message_to_log, messageType);
+                        break;
+                    case LogToTarget.Console:
+                        ToConsole(message_to_log, messageType);
+                        break;
+                    default:
+                        throw new Exception("Invalid configuration");
+                 }
             }
-            if (error && _logError)
-            {
-                t = 2;
-            }
-            if (warning && _logWarning)
-            {
-                t = 3;
-            }
-            System.Data.SqlClient.SqlCommand command = new System.Data.SqlClient.SqlCommand("Insert into Log Values('" + message + "', " + t.ToString() + ")");
-            command.ExecuteNonQuery();
+        }
 
-            string l = "";
-            if (!System.IO.File.Exists(System.Configuration.ConfigurationManager.AppSettings["LogFileDirectory"] + "LogFile" + DateTime.Now.ToShortDateString() + ".txt"))
-            {
-                l = System.IO.File.ReadAllText(System.Configuration.ConfigurationManager.AppSettings["LogFileDirectory"] + "LogFile" + DateTime.Now.ToShortDateString() + ".txt");
-            }
-            if (error && _logError)
-            {
-                l = l + DateTime.Now.ToShortDateString() + message;
-            }
-            if (warning && _logWarning)
-            {
-                l = l + DateTime.Now.ToShortDateString() + message;
-            }
-            if (message && _logMessage)
-            {
-                l = l + DateTime.Now.ToShortDateString() + message;
-            }
-
-            System.IO.File.WriteAllText(System.Configuration.ConfigurationManager.AppSettings["LogFileDirectory"] + "LogFile" + DateTime.Now.ToShortDateString() + ".txt", l);
-
-            if (error && _logError)
+        private void ToConsole(string message_to_log, MessageType messageType)
+        {
+            if (messageType == MessageType.Error )
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-
-                if (warning && _logWarning)
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                }
-                if (message && _logMessage)
-                {
-                    Console.ForegroundColor = ConsoleColor.White;
-                }
-                Console.WriteLine(DateTime.Now.ToShortDateString() + message);
-
             }
-
+            if (messageType == MessageType.Warning)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+            }
+            if (messageType == MessageType.Message)
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+            Console.WriteLine(DateTime.Now.ToShortDateString() + message_to_log);
         }
-    }
+
+        private void ToFile(string message_to_log, MessageType messageType)
+        {
+            string path = System.Configuration.ConfigurationManager.AppSettings["LogFileDirectory"] + "LogFile" + DateTime.Now.ToShortDateString() + ".txt";
+            if (!File.Exists(path))
+            {
+                // Create a file to write to.
+                using (StreamWriter sw = File.CreateText(path))
+                {
+                    sw.WriteLine(string.Format("{0}:{1}", DateTime.Now.ToShortDateString(), message_to_log));
+                }
+            }
+            else
+            {
+                using (StreamWriter sw = File.AppendText(path))
+                {
+                    sw.WriteLine(string.Format("{0}:{1}", DateTime.Now.ToShortDateString(), message_to_log));
+                }
+            }
+        }
+
+        private void ToDatabase(string message_to_log, MessageType messageType)
+        {
+            using (SqlConnection connection = new SqlConnection(System.Configuration.ConfigurationManager.AppSettings["ConnectionString"]))
+            {
+                connection.Open();
+                SqlCommand command = new SqlCommand("Insert into Log Values('" + message_to_log + "', " + messageType.ToString() + ")");
+                command.ExecuteNonQuery();
+            }
+        }
+    }     
 }
