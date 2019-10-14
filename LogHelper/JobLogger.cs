@@ -25,7 +25,7 @@ namespace LogHelper
         private static bool _logWarning;
         private static bool _logError;
 
-    
+     
         public JobLogger(LogToTarget logToTarget, bool logMessage, bool logWarning, bool logError)
         {
             _logError = logError;
@@ -36,11 +36,19 @@ namespace LogHelper
         }
         public void LogMessage(string message_to_log, MessageType messageType)
         {
-            message_to_log.Trim();
-            if (message_to_log == null || message_to_log.Length == 0)
+           
+            if (message_to_log == null )
             {
-                return;
+                throw new ArgumentNullException();
             }
+
+            message_to_log.Trim();
+
+            if (message_to_log.Length == 0)
+            {
+                throw new ArgumentNullException();
+            }
+
 
             if (!_logError && !_logMessage && !_logWarning)
             {
@@ -66,8 +74,10 @@ namespace LogHelper
                         break;
                     default:
                         throw new Exception("Invalid configuration");
-                 }
+                }
             }
+            else
+                throw new Exception("Error or Warning or Message must be specified");
         }
 
         private void ToConsole(string message_to_log, MessageType messageType)
@@ -84,37 +94,55 @@ namespace LogHelper
             {
                 Console.ForegroundColor = ConsoleColor.White;
             }
-            Console.WriteLine(DateTime.Now.ToShortDateString() + message_to_log);
+            
+            Console.WriteLine(string.Format("{0}:{1}", DateTime.Now.ToShortDateString(), message_to_log));
         }
 
         private void ToFile(string message_to_log, MessageType messageType)
         {
-            string path = System.Configuration.ConfigurationManager.AppSettings["LogFileDirectory"] + "LogFile" + DateTime.Now.ToShortDateString() + ".txt";
-            if (!File.Exists(path))
+            try
             {
-                // Create a file to write to.
-                using (StreamWriter sw = File.CreateText(path))
+                string path = System.Configuration.ConfigurationManager.AppSettings["LogFileDirectory"] + "LogFile" + DateTime.Now.ToString("dd-MM-yyyy") + ".txt";
+                if (!File.Exists(path))
                 {
-                    sw.WriteLine(string.Format("{0}:{1}", DateTime.Now.ToShortDateString(), message_to_log));
+                    // Create a file to write to.
+                    using (StreamWriter sw = File.CreateText(path))
+                    {
+                        sw.WriteLine(string.Format("{0}:{1}", DateTime.Now.ToShortDateString(), message_to_log));
+                    }
+                }
+                else
+                {
+                    using (StreamWriter sw = File.AppendText(path))
+                    {
+                        sw.WriteLine(string.Format("{0}:{1}", DateTime.Now.ToShortDateString(), message_to_log));
+                    }
                 }
             }
-            else
+            catch
             {
-                using (StreamWriter sw = File.AppendText(path))
-                {
-                    sw.WriteLine(string.Format("{0}:{1}", DateTime.Now.ToShortDateString(), message_to_log));
-                }
+                throw new Exception("Error when save log on file");
             }
+
+           
         }
 
         private void ToDatabase(string message_to_log, MessageType messageType)
         {
-            using (SqlConnection connection = new SqlConnection(System.Configuration.ConfigurationManager.AppSettings["ConnectionString"]))
+            try
             {
-                connection.Open();
-                SqlCommand command = new SqlCommand("Insert into Log Values('" + message_to_log + "', " + messageType.ToString() + ")");
-                command.ExecuteNonQuery();
+                using (SqlConnection connection = new SqlConnection(System.Configuration.ConfigurationManager.AppSettings["ConnectionString"]))
+                {
+                    connection.Open();
+                    SqlCommand command = new SqlCommand("Insert into Log Values('" + message_to_log + "', " + messageType.ToString() + ")");
+                    command.ExecuteNonQuery();
+                }
             }
+            catch
+            {
+                throw new Exception("Error when save log on database");
+            }
+           
         }
     }     
 }
