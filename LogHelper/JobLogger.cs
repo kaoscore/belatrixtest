@@ -25,10 +25,10 @@ namespace LogHelper
             _logToFile = logToFile;
             _logToConsole = logToConsole;
         }
-        public static void LogMessage(string message, bool message, bool warning, bool error)
+        public static void LogMessage(string message_to_log, bool message, bool warning, bool error)
         {
-            message.Trim();
-            if (message == null || message.Length == 0)
+            message_to_log.Trim();
+            if (message_to_log == null || message_to_log.Length == 0)
             {
                 return;
             }
@@ -43,7 +43,7 @@ namespace LogHelper
 
             System.Data.SqlClient.SqlConnection connection = new System.Data.SqlClient.SqlConnection(System.Configuration.ConfigurationManager.AppSettings["ConnectionString"]);
             connection.Open();
-            int t;
+            int t  = 0;
             if (message && _logMessage)
             {
                 t = 1;
@@ -59,7 +59,7 @@ namespace LogHelper
             System.Data.SqlClient.SqlCommand command = new System.Data.SqlClient.SqlCommand("Insert into Log Values('" + message + "', " + t.ToString() + ")");
             command.ExecuteNonQuery();
 
-            string l;
+            string l = "";
             if (!System.IO.File.Exists(System.Configuration.ConfigurationManager.AppSettings["LogFileDirectory"] + "LogFile" + DateTime.Now.ToShortDateString() + ".txt"))
             {
                 l = System.IO.File.ReadAllText(System.Configuration.ConfigurationManager.AppSettings["LogFileDirectory"] + "LogFile" + DateTime.Now.ToShortDateString() + ".txt");
